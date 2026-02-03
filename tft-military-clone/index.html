@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TFT Military Clone</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: radial-gradient(circle at top, #0b1d2b, #04070d 70%);
+        color: #e6f2ff;
+      }
+
+      #ui {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .panel {
+        background: rgba(8, 21, 34, 0.75);
+        border: 1px solid rgba(96, 194, 255, 0.25);
+        box-shadow: 0 0 12px rgba(64, 170, 255, 0.2);
+        backdrop-filter: blur(6px);
+      }
+
+      #topbar {
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 18px;
+        padding: 10px 18px;
+        pointer-events: auto;
+      }
+
+      #topbar span {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      #shop {
+        position: absolute;
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: grid;
+        grid-template-columns: repeat(5, 160px);
+        gap: 12px;
+        padding: 12px;
+        pointer-events: auto;
+      }
+
+      .shop-card {
+        padding: 8px;
+        border: 1px solid rgba(120, 220, 255, 0.2);
+        background: rgba(4, 16, 26, 0.9);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .shop-card button {
+        margin-top: 4px;
+        background: #134b7a;
+        border: none;
+        color: #eaf6ff;
+        padding: 6px;
+        cursor: pointer;
+      }
+
+      .shop-card button:disabled {
+        background: #394452;
+        cursor: not-allowed;
+      }
+
+      #controls {
+        position: absolute;
+        bottom: 190px;
+        right: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        pointer-events: auto;
+      }
+
+      #controls button {
+        padding: 8px 10px;
+        background: #0d385c;
+        border: 1px solid rgba(96, 194, 255, 0.4);
+        color: #e6f2ff;
+        cursor: pointer;
+      }
+
+      #bench, #items {
+        position: absolute;
+        bottom: 190px;
+        left: 18px;
+        display: flex;
+        gap: 8px;
+        padding: 12px;
+        pointer-events: auto;
+      }
+
+      .slot {
+        width: 60px;
+        height: 60px;
+        border: 1px dashed rgba(96, 194, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        text-align: center;
+        padding: 4px;
+      }
+
+      #items {
+        bottom: 110px;
+      }
+
+      #doctrines {
+        position: absolute;
+        top: 80px;
+        left: 18px;
+        padding: 12px;
+        pointer-events: auto;
+        min-width: 180px;
+      }
+
+      #doctrines h3 {
+        margin: 0 0 6px 0;
+        font-size: 14px;
+      }
+
+      #overlay, #augment, #draft {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(2, 6, 10, 0.85);
+        pointer-events: auto;
+      }
+
+      #overlay.active,
+      #augment.active,
+      #draft.active {
+        display: flex;
+      }
+
+      .menu-card {
+        padding: 24px;
+        text-align: center;
+        max-width: 420px;
+      }
+
+      .menu-card button {
+        margin-top: 16px;
+        padding: 10px 18px;
+        background: #1b5f91;
+        border: none;
+        color: #e6f2ff;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .augment-grid, .draft-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 220px);
+        gap: 16px;
+      }
+
+      .augment-card, .draft-card {
+        padding: 16px;
+        background: rgba(6, 18, 30, 0.95);
+        border: 1px solid rgba(120, 220, 255, 0.25);
+        cursor: pointer;
+      }
+
+      .tooltip {
+        position: absolute;
+        background: rgba(4, 16, 26, 0.95);
+        border: 1px solid rgba(120, 220, 255, 0.25);
+        padding: 8px;
+        font-size: 12px;
+        pointer-events: none;
+        display: none;
+        z-index: 2;
+      }
+
+      #pause {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 16px 24px;
+        display: none;
+      }
+
+      #pause.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ui">
+      <div id="topbar" class="panel">
+        <span id="round">Round 1</span>
+        <span id="hp">HP 100</span>
+        <span id="gold">Gold 0</span>
+        <span id="level">Level 1</span>
+        <span id="timer">00</span>
+      </div>
+
+      <div id="doctrines" class="panel">
+        <h3>Active Doctrines</h3>
+        <div id="doctrine-list"></div>
+      </div>
+
+      <div id="shop" class="panel"></div>
+
+      <div id="controls" class="panel">
+        <button id="reroll">Reroll (2g)</button>
+        <button id="buy-xp">Buy XP (+4)</button>
+        <button id="lock">Lock Shop</button>
+        <button id="start-combat">Start Combat</button>
+      </div>
+
+      <div id="bench" class="panel"></div>
+      <div id="items" class="panel"></div>
+
+      <div id="overlay" class="active">
+        <div class="menu-card panel">
+          <h1>Operation: Command Table</h1>
+          <p>Deploy squads, field doctrines, and outmaneuver enemy divisions in a tactical holo-war game.</p>
+          <button id="start-game">Begin Simulation</button>
+        </div>
+      </div>
+
+      <div id="augment">
+        <div class="augment-grid"></div>
+      </div>
+
+      <div id="draft">
+        <div class="draft-grid"></div>
+      </div>
+
+      <div id="pause" class="panel">Paused</div>
+      <div id="tooltip" class="tooltip"></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
